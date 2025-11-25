@@ -1,6 +1,6 @@
 import { verifyWebhook } from '@clerk/nextjs/webhooks';
-import { createOrUpdateUser, deleteUser } from '@/lib/actions/user';
 import { clerkClient } from '@clerk/nextjs/server';
+import { createOrUpdateUser, deleteUser } from '@/lib/actions/user';
 
 export async function POST(req) {
   try {
@@ -19,12 +19,13 @@ export async function POST(req) {
     if (eventType === 'user.created' || eventType === 'user.updated') {
       const { first_name, last_name, email_addresses, image_url } = evt.data;
 
-      // Pick first verified email
+      // Pick first verified email or fallback to first email
       const email =
         email_addresses?.find(e => e.verification?.status === 'verified')?.email_address ||
         email_addresses?.[0]?.email_address ||
         '';
 
+      // Save or update user in MongoDB
       const user = await createOrUpdateUser(
         id,
         first_name,
@@ -38,11 +39,15 @@ export async function POST(req) {
       // If new user, save MongoId to Clerk metadata
       if (user && eventType === 'user.created') {
         try {
+          // Optional: small delay for webhook timing issues
+          await new Promise(r => setTimeout(r, 1000));
+
           const updatedUser = await clerkClient.users.updateUserMetadata(id, {
             publicMetadata: {
               userMongoId: user._id.toString(), // convert to string
             },
           });
+
           console.log('Clerk metadata updated successfully', updatedUser);
         } catch (error) {
           console.error('Error updating Clerk metadata:', error);
