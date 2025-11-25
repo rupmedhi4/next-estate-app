@@ -1,4 +1,3 @@
-export const runtime = 'nodejs'; // <- ye add karo
 
 import { verifyWebhook } from '@clerk/nextjs/webhooks';
 import { clerkClient } from '@clerk/nextjs/server';
@@ -6,7 +5,7 @@ import { createOrUpdateUser, deleteUser } from '@/lib/actions/user';
 
 export async function POST(req) {
   try {
-    // Verify Clerk webhook
+    
     const evt = await verifyWebhook(req);
 
     const { id } = evt.data; // Clerk user ID
@@ -16,7 +15,7 @@ export async function POST(req) {
     console.log(`Clerk userId: ${id}`);
 
     // ============================
-    // USER CREATED / UPDATED
+    // USER CREATED and UPDATED
     // ============================
     if (eventType === 'user.created' || eventType === 'user.updated') {
       const { first_name, last_name, email_addresses, image_url } = evt.data;
